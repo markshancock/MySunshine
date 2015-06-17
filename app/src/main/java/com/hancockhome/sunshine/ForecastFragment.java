@@ -1,5 +1,6 @@
 package com.hancockhome.sunshine;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -11,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -27,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import android.view.MenuInflater;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -76,16 +79,24 @@ public class ForecastFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        String[] list ={
-                "Refresh for current weather",
-        };
 
-        ArrayList<String> forecasts = new ArrayList<String>(Arrays.asList(list));
+        ArrayList<String> forecasts = new ArrayList<String>();
 
         mForecastAdapter = new ArrayAdapter<String>(getActivity(),R.layout.list_item_forecast,R.id.list_item_forecast_textview,forecasts);
+        mForecastAdapter.add("Refresh for current weather");
 
-        ListView forecast_item = (ListView) rootView.findViewById(R.id.listview_forecast);
-        forecast_item.setAdapter(mForecastAdapter);
+        ListView forecast_list = (ListView) rootView.findViewById(R.id.listview_forecast);
+        forecast_list.setAdapter(mForecastAdapter);
+        forecast_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int item_number, long item_id){
+                String item_text = mForecastAdapter.getItem(item_number);
+                Intent intent = new Intent(getActivity(), DetailActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT,item_text);
+                startActivity(intent);
+            }
+        });
+
         return rootView;
     }
 
