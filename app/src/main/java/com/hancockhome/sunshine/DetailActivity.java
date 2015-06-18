@@ -57,7 +57,7 @@ public class DetailActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
+            return getParent().onOptionsItemSelected(item);
         }
 
         return super.onOptionsItemSelected(item);

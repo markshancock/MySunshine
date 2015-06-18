@@ -1,9 +1,12 @@
 package com.hancockhome.sunshine;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -63,16 +66,26 @@ public class ForecastFragment extends Fragment {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                refresh();
+                UpdateWeather();
                 return true;
+            case R.id.action_settings:
+                return getActivity().onOptionsItemSelected(item);
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    public void refresh()
+    public void UpdateWeather()
     {
-        new FetchForecastTask().execute("97223");
+        String location = GetPreference(R.string.pref_location_key,R.string.pref_location_default);
+        new FetchForecastTask().execute(location,"imperial");
+    }
+
+    public String GetPreference(@StringRes int KeyId, @StringRes int defaultId)
+    {
+        // Get Preferences
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        return sharedPrefs.getString(getString(KeyId), getString(defaultId));
     }
 
     @Override
@@ -83,16 +96,16 @@ public class ForecastFragment extends Fragment {
         ArrayList<String> forecasts = new ArrayList<String>();
 
         mForecastAdapter = new ArrayAdapter<String>(getActivity(),R.layout.list_item_forecast,R.id.list_item_forecast_textview,forecasts);
-        mForecastAdapter.add("Refresh for current weather");
+        mForecastAdapter.add("Getting weather ...");
 
         ListView forecast_list = (ListView) rootView.findViewById(R.id.listview_forecast);
         forecast_list.setAdapter(mForecastAdapter);
         forecast_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int item_number, long item_id){
+            public void onItemClick(AdapterView<?> adapterView, View view, int item_number, long item_id) {
                 String item_text = mForecastAdapter.getItem(item_number);
                 Intent intent = new Intent(getActivity(), DetailActivity.class)
-                        .putExtra(Intent.EXTRA_TEXT,item_text);
+                        .putExtra(Intent.EXTRA_TEXT, item_text);
                 startActivity(intent);
             }
         });
@@ -100,15 +113,27 @@ public class ForecastFragment extends Fragment {
         return rootView;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        UpdateWeather();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        UpdateWeather();
+    }
+
     public class FetchForecastTask extends AsyncTask<String, Void, String[]>
     {
-
         private String LOG_TAG = FetchForecastTask.class.getSimpleName();
 
         @Override
         protected String[] doInBackground(String... params) {
 
             String zipcode = params[0];
+            String units = params[1];
 
             String url_string = new Uri.Builder()
                             .scheme("http")
@@ -117,9 +142,9 @@ public class ForecastFragment extends Fragment {
                             .appendPath("2.5")
                             .appendPath("forecast")
                             .appendPath("daily")
-                            .appendQueryParameter("q",zipcode)
-                            .appendQueryParameter("mode","json")
-                            .appendQueryParameter("units","metric")
+                            .appendQueryParameter("q", zipcode)
+                            .appendQueryParameter("mode", "json")
+                            .appendQueryParameter("units", units)
                             .appendQueryParameter("cnt", "7")
                             .build().toString();
 
