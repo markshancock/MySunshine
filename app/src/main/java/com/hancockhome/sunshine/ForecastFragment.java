@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import android.view.MenuInflater;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -77,7 +78,7 @@ public class ForecastFragment extends Fragment {
 
     public void UpdateWeather()
     {
-        String location = GetPreference(R.string.pref_location_key,R.string.pref_location_default);
+        String location = GetPreference(R.string.pref_location_key, R.string.pref_location_default);
         new FetchForecastTask().execute(location,"imperial");
     }
 
@@ -125,12 +126,12 @@ public class ForecastFragment extends Fragment {
         UpdateWeather();
     }
 
-    public class FetchForecastTask extends AsyncTask<String, Void, String[]>
+    public class FetchForecastTask extends AsyncTask<String, Void, String>
     {
         private String LOG_TAG = FetchForecastTask.class.getSimpleName();
 
         @Override
-        protected String[] doInBackground(String... params) {
+        protected String doInBackground(String... params) {
 
             String zipcode = params[0];
             String units = params[1];
@@ -156,7 +157,6 @@ public class ForecastFragment extends Fragment {
 
             // Will contain the raw JSON response as a string.
             String forecastJsonStr = null;
-            String[] weather;
 
             Log.i(LOG_TAG, "establishing connection");
 
@@ -214,27 +214,47 @@ public class ForecastFragment extends Fragment {
                     }
                 }
             }
-            try {
 
-                weather = getWeatherDataFromJson(forecastJsonStr, 7);
-
-            } catch (JSONException e) {
-                Log.e(LOG_TAG, "JsonError ", e);
-                return null;
-            }
-
-            return weather;
+            return forecastJsonStr;
         }
 
         @Override
-        protected void onPostExecute(String[] strings) {
-            super.onPostExecute(strings);
-            mForecastAdapter.clear();
-            for(String forecast_day: strings)
-            {
-                mForecastAdapter.add(forecast_day);
-            }
+        protected void onPostExecute(String jsonString) {
+            super.onPostExecute(jsonString);
 
+            try {
+
+                String location = getLocationFromJson(jsonString);
+                TextView textView = (TextView)getActivity().findViewById(R.id.location_text);
+                textView.setText(location);
+
+                String[]weather = getWeatherDataFromJson(jsonString, 7);
+                mForecastAdapter.clear();
+                for(String forecast_day: weather)
+                {
+                    mForecastAdapter.add(forecast_day);
+                }
+
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, "JsonError ", e);
+            }
+        }
+
+        // These are the names of the JSON objects that need to be extracted.
+        final String OWM_CITY = "city";
+        final String OWM_NAME = "name";
+        final String OWM_LIST = "list";
+        final String OWM_WEATHER = "weather";
+        final String OWM_TEMPERATURE = "temp";
+        final String OWM_MAX = "max";
+        final String OWM_MIN = "min";
+        final String OWM_DESCRIPTION = "main";
+
+        private String getLocationFromJson(String forecastJsonStr)
+                throws JSONException {
+            JSONObject forecastJson = new JSONObject(forecastJsonStr);
+            String location = forecastJson.getJSONObject(OWM_CITY).getString(OWM_NAME);
+            return location;
         }
 
         /* The date/time conversion code is going to be moved outside the asynctask later,
@@ -259,6 +279,7 @@ public class ForecastFragment extends Fragment {
             return highLowStr;
         }
 
+
         /**
          * Take the String representing the complete forecast in JSON Format and
          * pull out the data we need to construct the Strings needed for the wireframes.
@@ -268,14 +289,6 @@ public class ForecastFragment extends Fragment {
          */
         private String[] getWeatherDataFromJson(String forecastJsonStr, int numDays)
                 throws JSONException {
-
-            // These are the names of the JSON objects that need to be extracted.
-            final String OWM_LIST = "list";
-            final String OWM_WEATHER = "weather";
-            final String OWM_TEMPERATURE = "temp";
-            final String OWM_MAX = "max";
-            final String OWM_MIN = "min";
-            final String OWM_DESCRIPTION = "main";
 
             JSONObject forecastJson = new JSONObject(forecastJsonStr);
             JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
