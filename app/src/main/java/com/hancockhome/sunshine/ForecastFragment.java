@@ -79,7 +79,8 @@ public class ForecastFragment extends Fragment {
     public void UpdateWeather()
     {
         String location = GetPreference(R.string.pref_location_key, R.string.pref_location_default);
-        new FetchForecastTask().execute(location,"imperial");
+        String units = GetPreference(R.string.pref_units_key, R.string.pref_units_default);
+        new FetchForecastTask().execute(location,units);
     }
 
     public String GetPreference(@StringRes int KeyId, @StringRes int defaultId)

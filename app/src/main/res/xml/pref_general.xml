@@ -8,4 +8,11 @@
         android:inputType="text"
         android:singleLine="true" />
 
+    <ListPreference
+        android:key="Units"
+        android:title="Temperature Units"
+        android:entries="@array/UnitData"
+        android:entryValues="@array/UnitData"/>
+
+
 </PreferenceScreen>
