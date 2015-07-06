@@ -2,6 +2,8 @@ package com.hancockhome.sunshine;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -66,6 +68,22 @@ public class ForecastFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
+            case R.id.action_show_location:
+                String zipCode = GetPreference(R.string.pref_location_key, R.string.pref_location_default);
+                Uri geoLocation = null;
+                try {
+                    Geocoder geocoder = new Geocoder(getActivity());
+                    List<Address> addresses = geocoder.getFromLocationName(zipCode, 1);
+                    if (addresses != null && !addresses.isEmpty()) {
+                        Address address = addresses.get(0);
+                        String uri = String.format("geo:%f,%f", address.getLatitude(), address.getLongitude());
+                        geoLocation = Uri.parse(uri);
+                    }
+                } catch (IOException e) {
+                    return true;    // TODO: Handle Exception
+                }
+                ShowMap(geoLocation);
+                return true;
             case R.id.action_refresh:
                 UpdateWeather();
                 return true;
@@ -76,8 +94,15 @@ public class ForecastFragment extends Fragment {
         }
     }
 
-    public void UpdateWeather()
-    {
+    public void ShowMap(Uri geoLocation) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(geoLocation);
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        }
+    }
+
+    public void UpdateWeather() {
         String location = GetPreference(R.string.pref_location_key, R.string.pref_location_default);
         String units = GetPreference(R.string.pref_units_key, R.string.pref_units_default);
         new FetchForecastTask().execute(location,units);
