@@ -19,13 +19,17 @@ package com.hancockhome.sunshine;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.widget.ShareActionProvider;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 
 public class DetailActivity extends ActionBarActivity {
 
@@ -35,46 +39,25 @@ public class DetailActivity extends ActionBarActivity {
         setContentView(R.layout.activity_detail);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
+                    .add(R.id.container, new DetailFragment())
                     .commit();
         }
     }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.detail, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return getParent().onOptionsItemSelected(item);
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     /**
-     * A placeholder fragment containing a simple view.
+     * Daily Forecast View
      */
-    public static class PlaceholderFragment extends Fragment {
+    public static class DetailFragment extends Fragment {
 
-        public PlaceholderFragment() {
+        private ShareActionProvider mShareActionProvider;
+
+        public DetailFragment() {
+            setHasOptionsMenu(true);
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-
             View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
             Intent intent = getActivity().getIntent();
             String forecast = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -82,5 +65,31 @@ public class DetailActivity extends ActionBarActivity {
             textView.setText(forecast);
             return rootView;
         }
+
+        @Override
+        public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+            // Inflate the menu; this adds items to the action bar if it is present.
+            inflater.inflate(R.menu.detail, menu);
+            Intent intent = getActivity().getIntent();
+            String forecast = intent.getStringExtra(Intent.EXTRA_TEXT);
+            Intent shareIntent = createForecastIntent(forecast);
+            // Get the menu item.
+            MenuItem menuItem = menu.findItem(R.id.menu_item_share);
+            // Get the provider and hold onto it to set/change the share intent.
+            // Get the provider and hold onto it to set/change the share intent.
+            mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+            if (shareIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                mShareActionProvider.setShareIntent(shareIntent);
+            }
+        }
+
+        private Intent createForecastIntent(String forecast) {
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+            shareIntent.putExtra(Intent.EXTRA_TEXT, forecast+getString((R.string.hash_tag)));
+            shareIntent.setType("text/plain");
+            return shareIntent;
+        }
+
     }
 }
